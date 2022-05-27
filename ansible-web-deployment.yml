@@ -22,9 +22,10 @@
 
      -
         name: "Start and enable the MariaDB"
-        yum:
+        service:
            name: mariadb
            state: started
+           enabled: yes
 
      -
         name: "Configure firewall for the Database"
@@ -53,17 +54,16 @@
        name: "Clone Db configuration files from Git"
        git:
          repo: git@github.com:ZainAli1995/Ansible-Deployments.git
-         dest: /root/
-         single_branch: yes
-         version: master
-
+         dest: /root/repos
+         clone: yes
+         update: yes
      -
        name: "Configure the database"
-       shell: mysql < /root/Ansible-Deployments/dbConfigurator.sql
+       shell: mysql < /root/repos/dbConfigurator.sql
 
      -
        name: "Load the data in the database"
-       shell: mysql < /root/Ansible-Deployments/dbLoader.sql
+       shell: mysql < /root/repos/dbLoader.sql
 
 -
   name: "Install php modules and dependencies"
@@ -94,3 +94,28 @@
               permanent: yes
               state: enabled
               immediate: yes 
+     -
+       name: "Change the directory index to index.php"
+       replace:
+            path: /etc/httpd/conf/httpd.conf
+            regexp: "index.html"
+            replace: "index.php"
+
+     -
+       name: "Clone the source code git repo"
+       git:
+         repo: https://github.com/kodekloudhub/learning-app-ecommerce.git
+         dest: /var/www/html
+         clone: yes 
+     -
+       name: "Update the index.php"
+       replace:
+           path: /var/www/html/index.php
+           regexp: "172.20.1.101"
+           replace: "localhost"
+
+     -
+       name: "Start the httpd service"
+       service:
+            name: httpd
+            state: started
