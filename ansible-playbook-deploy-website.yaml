@@ -1,0 +1,104 @@
+-
+  name: "Deploy the Ecommerce Website"
+  hosts: all
+  tasks:
+       - 
+         name: "Install the firewalld service"
+         yum: 
+            name: firewalld 
+            state: present
+
+       -
+         name: "Start and enable the firewalld service"
+         service: 
+             name: firewalld 
+             state: started
+             enabled: yes
+
+       -
+         name: "Install MariaDB"
+         yum:
+            name: mariadb-server
+            state: present
+
+       -
+         name: "Start and Enable the MariaDB Service"
+         service:
+               name: mariadb
+               enabled: true
+               state: started
+
+       -
+         name: "Configure firewall for the Database"
+         firewalld:
+               port: 3306/tcp
+               zone: public
+               permanent: yes
+               state: enabled
+               immediate: yes
+       -
+         name: "Configure the database"
+         script: /root/ansible-demos-exercises/project/configureMariaDB.sh
+
+       -
+         name: "Load the configurations"
+         shell: mysql < /root/project/MariaDBScripts/configuration.sql
+         
+       -
+         name: "Load the data"
+         shell: mysql < /root/project/MariaDBScripts/db-load-script.sql
+
+       -
+         name: "Install httpd php and php-mysql"
+         yum:
+            name: httpd
+            state: present
+       -
+         name: "Install php and all dependencies"
+         yum:
+            name:
+               - php
+               - php-common
+               - php-cli
+               - php-gd
+               - php-curl
+               - php-fpm
+               - php-mysqli
+            state: present
+       -
+         name: "Configure firewall for Apache"
+         firewalld:
+               port: 80/tcp
+               zone: public
+               permanent: yes
+               state: enabled
+               immediate: yes
+
+       -
+          name: "Change DirectoryIndex to index.php"
+          replace:
+              path: /etc/httpd/conf/httpd.conf
+              regexp: "index.html"
+              replace: "index.php"
+
+       -
+          name: "Start the httpd service"
+          service:
+                name: httpd
+                state: started
+                enabled: true
+       -
+          name: "Install git"
+          yum:
+             name: git
+             state: present
+       -
+          name:  "Download Code from Git"
+          command: git clone https://github.com/kodekloudhub/learning-app-ecommerce.git /var/www/html/
+
+       -
+          name: "Update index.php"
+          replace:
+               path: /var/www/html/index.php
+               regexp: "172.20.1.101"
+               replace: "localhost"
