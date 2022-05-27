@@ -1,0 +1,96 @@
+-
+  name: "Deploy the e-commerce website"
+  hosts: all
+  tasks:
+     - 
+        name: "Install the firewalld service"
+        yum:
+          name: firewalld
+          state: present
+
+     -
+        name: "Start and enable the firewalld service"
+        service:
+             name: firewalld
+             state: started
+             enabled: yes
+     -
+        name: "Install the MariaDB"
+        yum:
+          name: mariadb-server
+          state: latest
+
+     -
+        name: "Start and enable the MariaDB"
+        yum:
+           name: mariadb
+           state: started
+
+     -
+        name: "Configure firewall for the Database"
+        firewalld:
+              port: 3306/tcp
+              zone: public
+              permanent: yes
+              state: enabled
+              immediate: yes
+     -
+        name: "Install the httpd server"
+        yum:
+          name: httpd
+          state: latest
+     -
+        name: "Install Git"
+        yum:
+          name: git
+          state: present
+
+-
+  name: "Configure the database"
+  hosts: all
+  tasks:
+     -
+       name: "Clone Db configuration files from Git"
+       git:
+         repo: git@github.com:ZainAli1995/Ansible-Deployments.git
+         dest: /root/
+         single_branch: yes
+         version: master
+
+     -
+       name: "Configure the database"
+       shell: mysql < /root/Ansible-Deployments/dbConfigurator.sql
+
+     -
+       name: "Load the data in the database"
+       shell: mysql < /root/Ansible-Deployments/dbLoader.sql
+
+-
+  name: "Install php modules and dependencies"
+  hosts: all
+  tasks:
+     -
+       name: "Install the php and dependencies"
+       yum:
+         name:
+             - php
+             - php-common
+             - php-cli
+             - php-gd
+             - php-curl
+             - php-fpm
+             - php-mysqli
+         state: latest
+
+-
+  name: "Configure the httpd server"
+  hosts: all
+  tasks:
+     -
+       name: "Configure httpd firewall"
+       firewalld:
+              port: 80/tcp
+              zone: public
+              permanent: yes
+              state: enabled
+              immediate: yes 
